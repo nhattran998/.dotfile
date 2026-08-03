@@ -1,0 +1,78 @@
+onboarding = false
+
+[worktrees]
+directory = "~/.investtal/worktrees"
+
+[keys]
+prefix = "ctrl+a"
+goto = "prefix+g"
+new_tab = "prefix+t"
+next_tab = "prefix+n"
+switch_tab = "prefix+1..9"
+previous_tab = "prefix+p"
+rename_tab = "prefix+r"
+close_tab = "prefix+w"
+
+focus_pane_left = ["ctrl+h"]
+focus_pane_down = ["ctrl+j"]
+focus_pane_up = ["ctrl+k"]
+focus_pane_right = ["ctrl+l"]
+
+navigate_workspace_up = "up"
+navigate_workspace_down = "down"
+navigate_pane_left = "h"
+navigate_pane_down = "j"
+navigate_pane_up = "k"
+navigate_pane_right = "l"
+
+split_horizontal = "prefix+-"
+split_vertical = "prefix+v"
+help = "prefix+?"
+reload_config = "prefix+shift+r"
+
+new_workspace = "prefix+shift+n"
+# workspace_picker = "prefix+w+s"
+# rename_workspace = "prefix+w+r"
+close_workspace = "prefix+shift+w"
+previous_workspace = "prefix+shift+h"
+next_workspace = "prefix+shift+l"
+
+focus_agent = "prefix+alt+1..9"
+
+zoom = "prefix+z"
+toggle_sidebar = "prefix+b"
+
+[[keys.command]]
+key = "prefix+f"
+type = "popup"
+description = "File Viewer"
+width = "90%"
+height = "90%"
+command = '''PLUGIN_DIR="$(herdr plugin list --json | jq -r '.result.plugins[] | select(.plugin_id=="herdr-file-viewer") | .plugin_root')" && CONFIG_DIR="$(herdr plugin config-dir herdr-file-viewer)" && HERDR_PLUGIN_CONFIG_DIR="$CONFIG_DIR" exec "$PLUGIN_DIR/target/release/herdr-file-viewer"'''
+
+[theme]
+name = "catppuccin"
+auto_switch = true
+light_name = "catppuccin-latte"
+dark_name = "catppuccin"
+
+[ui]
+show_agent_labels_on_pane_borders = true
+agent_panel_sort = "spaces"
+confirm_close = false
+
+[ui.toast]
+delivery = "off"
+
+[ui.toast.herdr]
+position = "top-right"
+
+[ui.toast.clipboard]
+enabled = true
+position = "bottom-center"
+
+[ui.sound]
+enabled = true
+
+[advanced]
+scrollback_limit_bytes = 52428800

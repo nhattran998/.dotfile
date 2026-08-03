@@ -1,0 +1,24 @@
+# Nix
+result
+result-*
+.direnv/
+
+# Editor / OS
+.DS_Store
+*.swp
+*~
+.idea/
+.vscode/
+
+# Secrets — never commit
+*.pem
+*.key
+.env
+.env.*
+secrets.nix
+
+# herdr / runtime noise if accidentally copied
+**/*.sock
+**/*.log
+session.json
+release-notes.json
