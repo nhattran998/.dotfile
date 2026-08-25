@@ -1,16 +1,13 @@
 {
-  description = "Harry's multi-host dotfiles (nix-darwin + home-manager + proto)";
+  description = "Harry's developer profile (Home Manager + nix-darwin + Determinate)";
 
   inputs = {
-    # Single pin works for darwin host packages and Linux homeConfigurations.
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-26.05";
-
     nix-darwin.url = "github:nix-darwin/nix-darwin/nix-darwin-26.05";
     nix-darwin.inputs.nixpkgs.follows = "nixpkgs";
-
     home-manager.url = "github:nix-community/home-manager/release-26.05";
     home-manager.inputs.nixpkgs.follows = "nixpkgs";
-
+    determinate.url = "https://flakehub.com/f/DeterminateSystems/determinate/3";
     nix-homebrew.url = "github:zhaofengli/nix-homebrew";
   };
 
@@ -20,71 +17,125 @@
       nixpkgs,
       nix-darwin,
       home-manager,
+      determinate,
       nix-homebrew,
       ...
     }:
     let
-      # macOS login name — bootstrap-mac.sh can rewrite this if it differs.
-      user = "harrytran998";
+      sudoUser = builtins.getEnv "SUDO_USER";
+      envUser = builtins.getEnv "USER";
+      usernameFromEnv =
+        if sudoUser != "" && sudoUser != "root" then
+          sudoUser
+        else if envUser != "" && envUser != "root" then
+          envUser
+        else
+          "";
+      username = if usernameFromEnv == "" then "harrytran998" else usernameFromEnv;
 
-      # Ubuntu server login name (change if different).
-      serverUser = "harrytran998";
+      eachSystem =
+        f:
+        nixpkgs.lib.genAttrs [ "aarch64-darwin" "x86_64-darwin" "x86_64-linux" "aarch64-linux" ] (
+          system: f (import nixpkgs { inherit system; })
+        );
 
-      # Server CPU: "x86_64-linux" or "aarch64-linux".
-      serverSystem = "x86_64-linux";
+      toolsFor = pkgs: import ./packages/tools.nix { inherit pkgs; };
+
+      homeCommonModules = [
+        determinate.homeManagerModules.default
+        ./modules/home/common.nix
+      ];
+      linuxHomeModules = homeCommonModules ++ [ ./modules/home/linux.nix ];
+      omarchyHomeModules = linuxHomeModules ++ [ ./modules/home/omarchy.nix ];
 
       mkHome =
         {
           system,
-          username,
           modules,
         }:
         home-manager.lib.homeManagerConfiguration {
-          pkgs = nixpkgs.legacyPackages.${system};
+          pkgs = import nixpkgs { inherit system; };
           extraSpecialArgs = {
-            inherit user username;
-            # home modules that key off the macOS user still see `user`.
+            inherit username inputs;
           };
-          modules = modules;
+          inherit modules;
         };
     in
     {
-      # Apple Silicon Mac (M4): nix-darwin + home-manager + nix-homebrew.
+      devShells = eachSystem (pkgs: {
+        default = pkgs.mkShellNoCC {
+          packages = (toolsFor pkgs).list;
+        };
+      });
+
+      packages = eachSystem (
+        pkgs:
+        let
+          t = toolsFor pkgs;
+        in
+        {
+          inherit (t)
+            moon
+            bun
+            pnpm
+            node
+            glow
+            dcg
+            caveman
+            wigolo
+            codegraph
+            hunk
+            officecli
+            herdr
+            fx
+            scc
+            ;
+          default = t.moon;
+        }
+      );
+
+      homeConfigurations.me-linux = mkHome {
+        system = "x86_64-linux";
+        modules = linuxHomeModules;
+      };
+      homeConfigurations.me-linux-aarch64 = mkHome {
+        system = "aarch64-linux";
+        modules = linuxHomeModules;
+      };
+      homeConfigurations.me-omarchy = mkHome {
+        system = "x86_64-linux";
+        modules = omarchyHomeModules;
+      };
+      homeConfigurations.me-omarchy-aarch64 = mkHome {
+        system = "aarch64-linux";
+        modules = omarchyHomeModules;
+      };
+      homeConfigurations.me-darwin = mkHome {
+        system = "aarch64-darwin";
+        modules = homeCommonModules;
+      };
+
       darwinConfigurations.mac = nix-darwin.lib.darwinSystem {
-        specialArgs = { inherit user inputs; };
+        system = "aarch64-darwin";
+        specialArgs = {
+          inherit username inputs;
+        };
         modules = [
+          determinate.darwinModules.default
           ./hosts/mac
           nix-homebrew.darwinModules.nix-homebrew
           home-manager.darwinModules.home-manager
           {
             home-manager.useGlobalPkgs = true;
             home-manager.useUserPackages = true;
-            home-manager.extraSpecialArgs = { inherit user; };
-            home-manager.users.${user} = import ./modules/home/mac.nix;
+            home-manager.backupFileExtension = "before-hm";
+            home-manager.extraSpecialArgs = {
+              inherit username inputs;
+            };
+            home-manager.users.${username} = {
+              imports = homeCommonModules;
+            };
           }
-        ];
-      };
-
-      # Optional standalone home-manager for Mac (usually unused; darwin path is primary).
-      homeConfigurations."${user}@mac" = mkHome {
-        system = "aarch64-darwin";
-        username = user;
-        modules = [ ./modules/home/mac.nix ];
-      };
-
-      # Ubuntu server: home-manager only (keep Ubuntu as the OS).
-      homeConfigurations."${serverUser}@server" = mkHome {
-        system = serverSystem;
-        username = serverUser;
-        modules = [
-          (
-            { ... }:
-            {
-              home.username = serverUser;
-              home.homeDirectory = "/home/${serverUser}";
-            }
-          )
-          ./modules/home/linux.nix
         ];
       };
     };

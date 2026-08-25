@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 # Re-apply the flake after edits. Usage:
-#   ./rebuild.sh           # auto-detect Darwin → mac, else server
+#   ./rebuild.sh           # auto-detect Darwin → mac, else me-linux
 #   ./rebuild.sh mac
-#   ./rebuild.sh server
+#   ./rebuild.sh linux
 set -euo pipefail
 
 DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd -P)"
@@ -13,9 +13,9 @@ TARGET="${1:-auto}"
 if [ "$TARGET" = "auto" ]; then
   case "$(uname -s)" in
     Darwin) TARGET=mac ;;
-    Linux)  TARGET=server ;;
+    Linux)  TARGET=linux ;;
     *)
-      echo "Unknown OS; pass mac or server explicitly."
+      echo "Unknown OS; pass mac or linux explicitly."
       exit 1
       ;;
   esac
@@ -23,26 +23,33 @@ fi
 
 case "$TARGET" in
   mac)
-    echo "==> darwin-rebuild switch --flake ~/.dotfiles#mac"
+    echo "==> darwin-rebuild switch --impure --flake ~/.dotfiles#mac"
     if command -v darwin-rebuild >/dev/null 2>&1; then
-      exec sudo darwin-rebuild switch --flake ~/.dotfiles#mac
+      exec sudo env HOME=/var/root USER="$USER" SUDO_USER="$USER" PATH="$PATH" \
+        darwin-rebuild switch --impure --flake ~/.dotfiles#mac
     else
       NIX_BIN="$(command -v nix)"
-      exec sudo "$NIX_BIN" run github:nix-darwin/nix-darwin/nix-darwin-26.05#darwin-rebuild -- \
-        switch --flake ~/.dotfiles#mac
+      exec sudo env HOME=/var/root USER="$USER" SUDO_USER="$USER" PATH="$PATH" \
+        "$NIX_BIN" run --impure nix-darwin/nix-darwin-26.05 -- \
+        switch --impure --flake ~/.dotfiles#mac
     fi
     ;;
-  server)
-    USER_NAME="$(whoami)"
-    echo "==> home-manager switch --flake ~/.dotfiles#${USER_NAME}@server"
-    if command -v home-manager >/dev/null 2>&1; then
-      exec home-manager switch --flake "${DIR}#${USER_NAME}@server"
+  linux)
+    ARCH="$(uname -m)"
+    if [ "$ARCH" = "aarch64" ] || [ "$ARCH" = "arm64" ]; then
+      ATTR=me-linux-aarch64
     else
-      exec nix run home-manager/release-26.05 -- switch --flake "${DIR}#${USER_NAME}@server"
+      ATTR=me-linux
+    fi
+    echo "==> home-manager switch --impure --flake ~/.dotfiles#${ATTR}"
+    if command -v home-manager >/dev/null 2>&1; then
+      exec home-manager switch -b before-hm --impure --flake "${DIR}#${ATTR}"
+    else
+      exec nix run home-manager/release-26.05 -- switch -b before-hm --impure --flake "${DIR}#${ATTR}"
     fi
     ;;
   *)
-    echo "Usage: $0 [mac|server|auto]"
+    echo "Usage: $0 [mac|linux|auto]"
     exit 1
     ;;
 esac

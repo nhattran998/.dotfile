@@ -3,7 +3,6 @@
 set -euo pipefail
 
 DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd -P)"
-HOST_LABEL="${1:-server}"
 
 echo "==> Step 1: Nix"
 if command -v nix >/dev/null 2>&1; then
@@ -24,20 +23,15 @@ if ! grep -q 'experimental-features' ~/.config/nix/nix.conf 2>/dev/null; then
   echo "experimental-features = nix-command flakes" >> ~/.config/nix/nix.conf
 fi
 
-REAL_USER="$(whoami)"
-FLAKE_TARGET="${REAL_USER}@${HOST_LABEL}"
-echo "==> Step 4: home-manager switch --flake ~/.dotfiles#${FLAKE_TARGET}"
-echo "    (serverUser in flake.nix must match \"$REAL_USER\"; host label is \"${HOST_LABEL}\")"
-
-nix run home-manager/release-26.05 -- switch --flake "${DIR}#${FLAKE_TARGET}"
-
-echo "==> Step 5: proto (Investtal toolchain)"
-if ! command -v proto >/dev/null 2>&1; then
-  curl -fsSL https://moonrepo.dev/install/proto.sh | bash
-  export PATH="$HOME/.proto/bin:$PATH"
+ARCH="$(uname -m)"
+if [ "$ARCH" = "aarch64" ] || [ "$ARCH" = "arm64" ]; then
+  ATTR=me-linux-aarch64
+else
+  ATTR=me-linux
 fi
-proto install || echo "    proto install reported issues — re-run manually later"
+
+echo "==> Step 4: home-manager switch --impure --flake ~/.dotfiles#${ATTR}"
+nix run home-manager/release-26.05 -- switch -b before-hm --impure --flake "${DIR}#${ATTR}"
 
 echo "==> Done."
-echo "    Future changes:  cd ~/.dotfiles && ./rebuild.sh server"
-echo "    Install herdr from upstream releases if you want the same multiplexer on the server."
+echo "    Future changes:  cd ~/.dotfiles && ./rebuild.sh linux"

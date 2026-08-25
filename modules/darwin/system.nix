@@ -1,20 +1,21 @@
-{ user, ... }:
+{ username, ... }:
 {
+  determinateNix.enable = true;
   # Determinate Nix owns the daemon — do not let nix-darwin fight it.
   nix.enable = false;
 
   nixpkgs.config.allowUnfree = true;
   nixpkgs.hostPlatform = "aarch64-darwin";
 
-  system.primaryUser = user;
-  users.users.${user} = {
-    home = "/Users/${user}";
+  system.primaryUser = username;
+  users.users.${username} = {
+    home = "/Users/${username}";
   };
 
-  # Bump only when nix-darwin docs say to.
   system.stateVersion = 6;
 
-  # Conservative macOS defaults — expand later if you want more.
+  environment.extraInit = builtins.readFile ../../scripts/source-overlays.sh;
+
   system.defaults = {
     NSGlobalDomain = {
       AppleInterfaceStyle = "Dark";

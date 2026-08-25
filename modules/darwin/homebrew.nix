@@ -1,21 +1,18 @@
-{ user, ... }:
+{ username, ... }:
 {
   nix-homebrew = {
     enable = true;
-    inherit user;
+    user = username;
   };
 
   homebrew = {
     enable = true;
 
     # SAFE: never uninstall brew packages that are not listed below.
-    # (Reference repo uses "zap" — we intentionally do not.)
     onActivation.cleanup = "none";
     onActivation.autoUpdate = true;
 
-    brews = [
-      "herdr"
-    ];
+    brews = [ ];
 
     casks = [
       "ghostty"

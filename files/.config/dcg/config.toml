@@ -1,0 +1,54 @@
+[packs]
+enabled = [
+  "system.disk",
+  "system.permissions",
+  "system.services",
+  "database.postgresql",
+  "database.redis",
+  "database.mysql",
+  "database.mongodb",
+  "containers.docker",
+  "containers.compose",
+  "kubernetes.kubectl",
+  "kubernetes.helm",
+  "cloud.aws",
+  "cloud.gcp",
+  "infrastructure.terraform",
+  "infrastructure.pulumi",
+  "cicd.jenkins",
+  "cicd.github_actions",
+  "secrets.vault",
+  "secrets.aws_secrets",
+  "secrets.doppler",
+  "secrets.onepassword",
+  "remote.ssh",
+  "remote.rsync",
+  "remote.scp",
+  "storage.s3",
+  "storage.gcs",
+  "strict_git",
+  "payment.stripe",
+]
+
+[agents.claude-code]
+trust_level = "high"
+
+[agents.grok]
+trust_level = "high"
+
+[agents.codex]
+trust_level = "high"
+
+[agents.cursor]
+trust_level = "high"
+
+[agents.pi]
+trust_level = "high"
+
+[agents.omp]
+trust_level = "high"
+
+[agents.unknown]
+trust_level = "low"
+disabled_allowlist = true
+extra_packs = ["strict_git", "database"]

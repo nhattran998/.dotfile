@@ -1,24 +1,33 @@
+# Generic Linux Home Manager (Ubuntu, WSL2, and as a base for Omarchy).
 {
-  config,
   pkgs,
+  lib,
   ...
 }:
 {
-  imports = [
-    ./common.nix
-    ./proto.nix
+  assertions = [
+    {
+      assertion = pkgs.stdenv.isLinux;
+      message = "modules/home/linux.nix is for Linux Home Manager hosts only";
+    }
   ];
 
-  # username / homeDirectory set by flake homeConfigurations."*@server" wrapper
-  # (or override in hosts/server if you add one).
+  targets.genericLinux.enable = true;
 
   home.packages = with pkgs; [
-    # server-friendly extras (no GUI)
-    tmux # fallback if herdr is not installed yet
+    tmux
     rsync
   ];
 
-  # No Ghostty on the server. herdr config still symlinked via common.nix.
-  # Install herdr on Linux via its upstream release / brew (if available), then
-  # rebuild so the config symlink is in place.
+  # Keep Bash as the system login shell, then hand interactive sessions to
+  # the Nix-managed Zsh without requiring chsh.
+  programs.bash = {
+    enable = true;
+    initExtra = lib.mkAfter ''
+      # ME_KEEP_BASH=1 bash provides an explicit Bash escape hatch.
+      if [[ -z "''${ME_KEEP_BASH:-}" ]]; then
+        exec ${lib.getExe pkgs.zsh} -l
+      fi
+    '';
+  };
 }

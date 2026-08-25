@@ -1,6 +1,4 @@
-# Thin host overrides for the Ubuntu server home-manager profile.
-# Username and system arch are set in flake.nix (serverUser / serverSystem).
+# Thin host overrides for a Linux home-manager profile.
+# Username comes from USER / SUDO_USER at apply time (--impure).
 {
-  # Example: host-only packages or services.
-  # home.packages = [ ];
 }

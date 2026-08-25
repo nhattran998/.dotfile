@@ -1,0 +1,15 @@
+theme = "custom"
+
+[custom_theme]
+base = "catppuccin-mocha"
+label = "My Theme"
+accent = "#7fd1ff"
+panel = "#10161d"
+noteBorder = "#c49bff"
+
+[custom_theme.syntax]
+keyword = "#8ed4ff"
+string = "#c7b4ff"
+comment = "#6e85a7"
+operator = "#7fd1ff"
+variable = "#eef4ff"

@@ -1,4 +1,4 @@
-{ user, ... }:
+{ ... }:
 {
   imports = [
     ../../modules/darwin/system.nix
